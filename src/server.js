@@ -1,5 +1,4 @@
 // worked on pseudo code with Katie Goldstein!
-
 import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
@@ -97,22 +96,28 @@ controller.on('direct_mention', (bot, message) => {
   bot.reply(message, 'you called charlottec-bot?');
 });
 
+// thank you for your service bot
+controller.hears(['thanks', 'thank you', 'ty'], ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
+  bot.api.users.info({ user: message.user }, (err, res) => {
+    if (res) {
+      bot.reply(message, `You're welcome, ${res.user.name}! If you have any other food needs, please come again, or you can ask now!`);
+    } else {
+      bot.reply(message, 'No problem! If you have any other food needs, please come again, or you can ask now!');
+    }
+  });
+});
 
 controller.on('outgoing_webhook', (bot, message) => {
   bot.replyPublic(message, 'On my way!');
 });
 
+const yelpClient = yelp.client(process.env.YELP_API_KEY);
 
-// Yelp Integration
-// let yelpClient;
-// yelp.accessToken(process.env.YELP_CLIENT_ID, process.env.YELP_CLIENT_SECRET)
-//   .then((res) => {
-//     yelpClient = yelp.client(res.jsonBody.access_token);
-//   });
-
-const yelpClient = yelp.client(process.env.YELP_CLIENT_SECRET);
-
-
+// methods taken from slack-bot --> https://api.slack.com/bot-users
+// method hears key word, conversation starts with a user defined location and favorite food
+// first ask location, then food, and if there are businesses that serve that food in that location (check by length of array)
+// return the food, restaurant name, and that restaurant's information
+// then also return the url and name of restaurant with an attachments method
 controller.hears(['food', 'hungry', 'famished', 'starving'], ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
   bot.api.users.info({ user: message.user }, (err, res) => {
     if (res) {
@@ -141,6 +146,7 @@ controller.hears(['food', 'hungry', 'famished', 'starving'], ['direct_message', 
               convo.say(`For your information and ease of booking, ${res.jsonBody.businesses[0].name} has ${res.jsonBody.businesses[0].review_count} reviews on Yelp, 
               with an average rating of ${res.jsonBody.businesses[0].rating}. If you want to book a table or order food now, please call ${res.jsonBody.businesses[0].phone}!`);
 
+              // https://api.slack.com/docs/message-attachments
               const attachments = {
                 attachments: [
                   {
@@ -169,6 +175,7 @@ controller.hears(['food', 'hungry', 'famished', 'starving'], ['direct_message', 
   });
 });
 
+// https://botkit.ai/docs/v0/readme-slack.html
 // when it's gibberish returns constant message with star emoji defined above!!!
 controller.hears('^[A-z]+$', ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
   bot.reply(message, emojified);
